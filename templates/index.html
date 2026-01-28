@@ -1,0 +1,550 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="fr-container fr-py-2w">
+    <div class="fr-grid-row fr-grid-row--center">
+        <div class="fr-col-12 fr-col-md-10 fr-col-lg-8">
+
+            <!-- Messages flottants -->
+            <div id="messageArea" style="position: fixed; top: 90px; left: 50%; transform: translateX(-50%); z-index: 1000; width: 90%; max-width: 600px;"></div>
+
+            {% if not token_present %}
+            <!-- Configuration du token -->
+            <div class="fr-card" style="margin-bottom: 1rem;">
+                <div class="fr-card__body" style="padding: 1rem;">
+                    <div class="fr-card__content">
+                        <h2 class="fr-card__title" style="margin-bottom: 0.5rem; font-size: 1.125rem;">🔑 Configuration du token API</h2>
+                        
+                        <div class="fr-alert fr-alert--warning" style="margin-bottom: 1rem; border-left-color: #ff8500 !important;">
+                            <p class="fr-alert__title">Sécurité</p>
+                            <p>Token chiffré et stocké temporairement (1h max).</p>
+                        </div>
+                        
+                        <div class="fr-input-group" style="margin-bottom: 1rem;">
+                            <label class="fr-label" for="api_token" style="margin-bottom: 0.25rem;">Token API Grist</label>
+                            <input class="fr-input" type="password" id="api_token" placeholder="Collez votre token ici...">
+                            <div class="fr-hint-text" style="margin-top: 0.25rem;">
+                                Grist → Paramètres → API → Créer une clé API
+                            </div>
+                        </div>
+                        
+                        <button type="button" class="fr-btn fr-btn--primary" id="setTokenBtn">
+                            Configurer le token
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+
+            <!-- Information en premier -->
+            <div class="fr-alert fr-alert--info" style="margin-bottom: 1rem;">
+                <p class="fr-alert__title">Information</p>
+                <p>Générateur d'URLs d'API Grist avec filtres dynamiques.</p>
+            </div>
+
+            <!-- Token configuré - Version compacte -->
+            <div class="fr-card" style="margin-bottom: 1rem;">
+                <div class="fr-card__body" style="padding: 1rem;">
+                    <div class="fr-card__content">
+                        <h2 class="fr-card__title" style="margin-bottom: 0.5rem; font-size: 1.125rem;">✅ Token configuré</h2>
+                        <p style="margin-bottom: 1rem; font-size: 0.9rem;">Votre token est sécurisé. Vous pouvez utiliser l'outil.</p>
+                        
+                        <div class="fr-btns-group fr-btns-group--inline">
+                            <button type="button" class="fr-btn fr-btn--secondary fr-btn--sm" id="testApiBtn">
+                                Tester connexion
+                            </button>
+                            <button type="button" class="fr-btn fr-btn--tertiary-no-outline fr-btn--sm" id="clearTokenBtn">
+                                Supprimer token
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulaire principal - Version ultra-compacte -->
+            <div class="fr-card" style="margin-bottom: 1rem;">
+                <div class="fr-card__body" style="padding: 1rem;">
+                    <div class="fr-card__content">
+                        <h3 class="fr-card__title" style="margin-bottom: 1rem; font-size: 1rem;">Générer une URL d'API</h3>
+
+                        <!-- Étape 1 -->
+                        <div style="margin-bottom: 0.75rem;">
+                            <label class="fr-label" for="doc_id" style="margin-bottom: 0.25rem; font-size: 0.9rem;">
+                                <span style="font-weight: bold; color: #000091;">1.</span> ID du document Grist
+                            </label>
+                            <input class="fr-input" type="text" id="doc_id" placeholder="Ex: cTdjBRNu26yTzGusvQKffu" style="margin-bottom: 0.25rem;">
+                            <div class="fr-hint-text" style="font-size: 0.8rem;">ID dans l'URL : https://grist.../docs/ID_DOCUMENT/...</div>
+                        </div>
+
+                        <!-- Étape 2 -->
+                        <div style="margin-bottom: 0.75rem;">
+                            <label class="fr-label" style="margin-bottom: 0.25rem; font-size: 0.9rem;">
+                                <span style="font-weight: bold; color: #000091;">2.</span> Charger les tables
+                            </label>
+                            <button type="button" class="fr-btn fr-btn--secondary fr-btn--sm" id="loadTablesBtn">
+                                Charger les tables
+                            </button>
+                        </div>
+
+                        <!-- Étape 3 -->
+                        <div id="tableSection" style="display: none; margin-bottom: 0.75rem;">
+                            <label class="fr-label" for="table_select" style="margin-bottom: 0.25rem; font-size: 0.9rem;">
+                                <span style="font-weight: bold; color: #000091;">3.</span> Sélectionnez une table
+                            </label>
+                            <select class="fr-select" id="table_select">
+                                <option value="">-- Choisissez une table --</option>
+                            </select>
+                        </div>
+
+                        <!-- Étape 4 -->
+                        <div id="columnSection" style="display: none; margin-bottom: 0.75rem;">
+                            <label class="fr-label" for="column_select" style="margin-bottom: 0.25rem; font-size: 0.9rem;">
+                                <span style="font-weight: bold; color: #000091;">4.</span> Sélectionnez une colonne
+                            </label>
+                            <select class="fr-select" id="column_select">
+                                <option value="">-- Choisissez une colonne --</option>
+                            </select>
+                            <div id="loadingColumns" style="display: none; font-size: 0.8rem; color: #666; margin-top: 0.25rem;">
+                                Chargement des colonnes...
+                            </div>
+                        </div>
+
+                        <!-- Étape 5 -->
+                        <div style="margin-bottom: 0;">
+                            <label class="fr-label" style="margin-bottom: 0.25rem; font-size: 0.9rem;">
+                                <span style="font-weight: bold; color: #000091;">5.</span> Générer l'URL
+                            </label>
+                            <button type="button" class="fr-btn fr-btn--primary fr-btn--sm" id="generateBtn" disabled>
+                                Générer l'URL
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Résultats -->
+            <div id="resultsSection" style="display: none;">
+                <div class="fr-card" style="margin-bottom: 1rem;">
+                    <div class="fr-card__body" style="padding: 1rem;">
+                        <div class="fr-card__content">
+                            <h3 class="fr-card__title" style="margin-bottom: 1rem; font-size: 1rem;">🎉 URL générée avec succès</h3>
+                            
+                            <div style="margin-bottom: 1rem;">
+                                <label class="fr-label" for="generated_url" style="margin-bottom: 0.25rem; font-size: 0.9rem;">URL d'API complète</label>
+                                <div class="fr-input-wrap fr-input-wrap--addon">
+                                    <input class="fr-input" type="text" id="generated_url" readonly 
+                                           style="font-family: monospace; font-size: 0.8rem;">
+                                    <button type="button" class="fr-btn fr-btn--tertiary-no-outline fr-btn--sm fr-btn--addon-right" id="copyBtn">
+                                        📋
+                                    </button>
+                                </div>
+                                <div class="fr-hint-text" style="font-size: 0.8rem; margin-top: 0.25rem;">Remplacez {id} par votre valeur de filtrage</div>
+                            </div>
+                            
+                            <div style="margin-bottom: 0;">
+                                <label class="fr-label" for="test_value" style="margin-bottom: 0.25rem; font-size: 0.9rem;">Tester avec une valeur (optionnel)</label>
+                                <div class="fr-input-wrap fr-input-wrap--addon">
+                                    <input class="fr-input" type="text" id="test_value" placeholder="Ex: LPA, Collège, Public...">
+                                    <button type="button" class="fr-btn fr-btn--tertiary fr-btn--sm fr-btn--addon-right" id="testUrlBtn">
+                                        Tester
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Résultat du test -->
+                <div id="testResults" style="display: none;"></div>
+            </div>
+
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+<style>
+/* Messages flottants simples */
+.message {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    font-size: 0.9rem;
+}
+
+.message.success {
+    background: #f0f8f4;
+    border-color: #18753c;
+    color: #18753c;
+}
+
+.message.error {
+    background: #fef0f0;
+    border-color: #ce0500;
+    color: #ce0500;
+}
+
+.message.info {
+    background: #f0f7ff;
+    border-color: #0063cb;
+    color: #0063cb;
+}
+
+.message.warning {
+    background: #fff8f0;
+    border-color: #ff8500;
+    color: #ff8500;
+}
+
+/* Boutons compacts */
+.fr-btn--sm {
+    font-size: 0.875rem !important;
+    padding: 0.25rem 0.5rem !important;
+    min-height: 1.75rem !important;
+    line-height: 1.25rem !important;
+}
+
+/* État de chargement */
+.btn-loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.btn-loading::after {
+    content: "...";
+    animation: dots 1s infinite;
+}
+
+@keyframes dots {
+    0% { content: "..."; }
+    50% { content: "...."; }
+    100% { content: "..."; }
+}
+
+/* Surcharge DSFR pour warning - JUSTE LA BARRE GAUCHE ORANGE */
+.fr-alert--warning {
+    border-left-color: #ff8500 !important;
+}
+
+/* Compacité maximale */
+.fr-card {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Réduction de tous les espacements par défaut */
+.fr-input-group {
+    margin-bottom: 0 !important;
+}
+
+.fr-select-group {
+    margin-bottom: 0 !important;
+}
+
+.fr-alert {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding: 0.75rem !important;
+}
+
+.fr-alert p {
+    margin-bottom: 0.25rem !important;
+}
+
+.fr-alert p:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+    #messageArea {
+        left: 1rem;
+        right: 1rem;
+        transform: none;
+        width: auto;
+    }
+    
+    .fr-btns-group--inline .fr-btn {
+        margin-bottom: 0.25rem;
+    }
+}
+</style>
+
+<script>
+// Messages simples
+function showMessage(text, type = 'info') {
+    const area = document.getElementById('messageArea');
+    const message = document.createElement('div');
+    message.className = `message ${type}`;
+    message.textContent = text;
+    
+    area.appendChild(message);
+    
+    // Animation
+    message.style.opacity = '0';
+    setTimeout(() => {
+        message.style.transition = 'opacity 0.3s';
+        message.style.opacity = '1';
+    }, 10);
+    
+    // Supprimer après 3 secondes
+    setTimeout(() => {
+        message.style.opacity = '0';
+        setTimeout(() => message.remove(), 300);
+    }, 3000);
+}
+
+// État bouton
+function setLoading(btn, loading) {
+    if (loading) {
+        btn.disabled = true;
+        btn.classList.add('btn-loading');
+        btn._text = btn.textContent;
+    } else {
+        btn.disabled = false;
+        btn.classList.remove('btn-loading');
+        if (btn._text) btn.textContent = btn._text;
+    }
+}
+
+// Configuration token
+document.getElementById('setTokenBtn')?.addEventListener('click', async function() {
+    const token = document.getElementById('api_token').value.trim();
+    if (!token) {
+        showMessage('Veuillez saisir un token', 'error');
+        return;
+    }
+    
+    setLoading(this, true);
+    
+    try {
+        const response = await fetch('/set_token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            showMessage('Token configuré avec succès !', 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showMessage(data.message, 'error');
+        }
+    } catch (error) {
+        showMessage('Erreur de connexion', 'error');
+    } finally {
+        setLoading(this, false);
+    }
+});
+
+// Test API
+document.getElementById('testApiBtn')?.addEventListener('click', async function() {
+    setLoading(this, true);
+    try {
+        const response = await fetch('/test_api');
+        const data = await response.json();
+        showMessage(data.message, data.success ? 'success' : 'error');
+    } catch (error) {
+        showMessage('Erreur de test', 'error');
+    } finally {
+        setLoading(this, false);
+    }
+});
+
+// Supprimer token
+document.getElementById('clearTokenBtn')?.addEventListener('click', async function() {
+    if (confirm('Supprimer le token ?')) {
+        try {
+            await fetch('/clear_token', { method: 'POST' });
+            showMessage('Token supprimé', 'success');
+            setTimeout(() => location.reload(), 1000);
+        } catch (error) {
+            showMessage('Erreur', 'error');
+        }
+    }
+});
+
+// Charger tables
+document.getElementById('loadTablesBtn')?.addEventListener('click', async function() {
+    const docId = document.getElementById('doc_id').value.trim();
+    if (!docId) {
+        showMessage('Saisissez l\'ID du document', 'error');
+        return;
+    }
+    
+    setLoading(this, true);
+    try {
+        const response = await fetch(`/api/tables/${docId}`);
+        const tables = await response.json();
+        
+        if (tables.length > 0) {
+            const select = document.getElementById('table_select');
+            select.innerHTML = '<option value="">-- Choisissez une table --</option>';
+            tables.forEach(table => {
+                const option = document.createElement('option');
+                option.value = table.id;
+                option.textContent = table.name;
+                select.appendChild(option);
+            });
+            document.getElementById('tableSection').style.display = 'block';
+            showMessage(`${tables.length} table(s) chargée(s)`, 'success');
+        } else {
+            showMessage('Aucune table trouvée', 'warning');
+        }
+    } catch (error) {
+        showMessage('Erreur chargement tables', 'error');
+    } finally {
+        setLoading(this, false);
+    }
+});
+
+// Changement table
+document.getElementById('table_select')?.addEventListener('change', async function() {
+    const docId = document.getElementById('doc_id').value.trim();
+    const tableName = this.value;
+    
+    if (!tableName) {
+        document.getElementById('columnSection').style.display = 'none';
+        document.getElementById('generateBtn').disabled = true;
+        return;
+    }
+    
+    document.getElementById('loadingColumns').style.display = 'block';
+    try {
+        const response = await fetch(`/api/columns/${docId}/${tableName}`);
+        const columns = await response.json();
+        
+        if (columns.length > 0) {
+            const select = document.getElementById('column_select');
+            select.innerHTML = '<option value="">-- Choisissez une colonne --</option>';
+            columns.forEach(column => {
+                const option = document.createElement('option');
+                option.value = column.id;
+                option.textContent = `${column.name} (${column.type})`;
+                select.appendChild(option);
+            });
+            document.getElementById('columnSection').style.display = 'block';
+            showMessage(`${columns.length} colonne(s) chargée(s)`, 'success');
+        } else {
+            showMessage('Aucune colonne trouvée', 'warning');
+        }
+    } catch (error) {
+        showMessage('Erreur chargement colonnes', 'error');
+    } finally {
+        document.getElementById('loadingColumns').style.display = 'none';
+    }
+});
+
+// Changement colonne
+document.getElementById('column_select')?.addEventListener('change', function() {
+    document.getElementById('generateBtn').disabled = !this.value;
+});
+
+// Générer URL
+document.getElementById('generateBtn')?.addEventListener('click', async function() {
+    const formData = new FormData();
+    formData.append('doc_id', document.getElementById('doc_id').value);
+    formData.append('table_name', document.getElementById('table_select').value);
+    formData.append('column_name', document.getElementById('column_select').value);
+    
+    setLoading(this, true);
+    try {
+        const response = await fetch('/generate_url', { method: 'POST', body: formData });
+        const data = await response.json();
+        
+        if (data.success) {
+            document.getElementById('generated_url').value = data.url;
+            document.getElementById('resultsSection').style.display = 'block';
+            showMessage('URL générée avec succès !', 'success');
+            setTimeout(() => {
+                document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+            }, 300);
+        } else {
+            showMessage(data.message, 'error');
+        }
+    } catch (error) {
+        showMessage('Erreur génération', 'error');
+    } finally {
+        setLoading(this, false);
+    }
+});
+
+// Copier URL
+document.getElementById('copyBtn')?.addEventListener('click', function() {
+    const field = document.getElementById('generated_url');
+    field.select();
+    document.execCommand('copy');
+    showMessage('URL copiée !', 'success');
+});
+
+// Tester URL
+document.getElementById('testUrlBtn')?.addEventListener('click', async function() {
+    const url = document.getElementById('generated_url').value;
+    const testValue = document.getElementById('test_value').value.trim();
+    
+    if (!testValue) {
+        showMessage('Saisissez une valeur de test', 'error');
+        return;
+    }
+    
+    setLoading(this, true);
+    const formData = new FormData();
+    formData.append('url', url);
+    formData.append('test_value', testValue);
+    
+    try {
+        const response = await fetch('/test_url', { method: 'POST', body: formData });
+        const data = await response.json();
+        const resultDiv = document.getElementById('testResults');
+        
+        if (data.success) {
+            const count = data.data.records ? data.data.records.length : 0;
+            resultDiv.innerHTML = `
+                <div class="fr-card" style="margin-bottom: 1rem;">
+                    <div class="fr-card__body" style="padding: 1rem;">
+                        <div class="fr-card__content">
+                            <h4 style="margin-bottom: 0.5rem; color: #18753c;">✅ Test réussi</h4>
+                            <p style="margin-bottom: 0.5rem;"><strong>${count}</strong> résultat(s) pour "${testValue}"</p>
+                            <details style="margin: 0;">
+                                <summary style="cursor: pointer; font-weight: 500;">Voir données JSON</summary>
+                                <pre style="background: #f6f6f6; padding: 0.5rem; border-radius: 4px; font-size: 0.7rem; max-height: 150px; overflow: auto; margin-top: 0.5rem; margin-bottom: 0;">${JSON.stringify(data.data, null, 2)}</pre>
+                            </details>
+                        </div>
+                    </div>
+                </div>
+            `;
+            showMessage(`${count} résultat(s) trouvé(s)`, 'success');
+        } else {
+            resultDiv.innerHTML = `
+                <div class="fr-card" style="margin-bottom: 1rem;">
+                    <div class="fr-card__body" style="padding: 1rem;">
+                        <div class="fr-card__content">
+                            <h4 style="margin-bottom: 0.5rem; color: #ce0500;">❌ Test échoué</h4>
+                            <p style="margin: 0;">Erreur : ${data.error}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            showMessage('Test échoué', 'error');
+        }
+        resultDiv.style.display = 'block';
+    } catch (error) {
+        showMessage('Erreur test', 'error');
+    } finally {
+        setLoading(this, false);
+    }
+});
+
+// Reset
+document.getElementById('doc_id')?.addEventListener('input', function() {
+    document.getElementById('tableSection').style.display = 'none';
+    document.getElementById('columnSection').style.display = 'none';
+    document.getElementById('resultsSection').style.display = 'none';
+    document.getElementById('generateBtn').disabled = true;
+});
+</script>
+{% endblock %}

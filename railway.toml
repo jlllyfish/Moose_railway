@@ -1,0 +1,16 @@
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "gunicorn app:app --bind 0.0.0.0:$PORT"
+healthcheckPath = "/"
+restartPolicyType = "ON_FAILURE"
+```
+
+2. **`.gitignore`** :
+```
+__pycache__/
+*.pyc
+.env
+venv/
+.DS_Store

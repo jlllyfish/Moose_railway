@@ -1,0 +1,41 @@
+<!-- templates/404.html -->
+{% extends "base.html" %}
+
+{% block title %}Page non trouvée - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="fr-grid-row fr-grid-row--center">
+    <div class="fr-col-12 fr-col-md-8 fr-col-lg-6">
+        
+        <div class="fr-alert fr-alert--error fr-mb-6w">
+            <h1 class="fr-alert__title">
+                Erreur 404 - Page non trouvée
+            </h1>
+            <p>La page que vous cherchez n'existe pas ou a été déplacée.</p>
+        </div>
+
+        <div class="fr-card fr-card--no-arrow">
+            <div class="fr-card__body">
+                <div class="fr-card__content">
+                    <h2 class="fr-card__title">Que faire ?</h2>
+                    <div class="fr-card__desc">
+                        <ul>
+                            <li>Vérifiez l'URL dans la barre d'adresse</li>
+                            <li>Retournez à la page d'accueil</li>
+                            <li>Utilisez le menu de navigation</li>
+                        </ul>
+                    </div>
+                    <div class="fr-card__footer">
+                        <div class="fr-btns-group">
+                            <a href="/" class="fr-btn fr-btn--primary">
+                                Retour à l'accueil
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

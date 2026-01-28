@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Moose - Générateur d'URLs Grist{% endblock %}</title>
+    
+    <!-- DSFR CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/@gouvfr/dsfr@1.11.0/dist/dsfr.min.css">
+    <link rel="stylesheet" href="dsfr.min.css">
+    <link rel="stylesheet" href="custom.css">  <!-- Votre fichier avec les corrections -->
+
+    
+    <!-- CSS Custom -->
+    <style>
+        /* Styles personnalisés pour corriger l'affichage */
+        .fr-header__service-title {
+            font-size: 1.25rem !important;
+            font-weight: 700;
+        }
+        
+        .fr-header__service-tagline {
+            font-size: 0.875rem;
+            color: #666;
+        }
+        
+        .token-card {
+            border-left: 4px solid #000091;
+        }
+        
+        .success-message {
+            background-color: #18753c;
+            color: white;
+            padding: 1rem;
+            border-radius: 0.25rem;
+            margin-bottom: 1rem;
+        }
+        
+        .error-message {
+            background-color: #ce0500;
+            color: white;
+            padding: 1rem;
+            border-radius: 0.25rem;
+            margin-bottom: 1rem;
+        }
+        
+        .info-message {
+            background-color: #0063cb;
+            color: white;
+            padding: 1rem;
+            border-radius: 0.25rem;
+            margin-bottom: 1rem;
+        }
+        
+        /* Style pour les champs de saisie sécurisés */
+        .secure-input {
+            border-left: 3px solid #18753c;
+        }
+        
+        /* Animation de chargement */
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #000091;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Style pour l'URL générée */
+        .generated-url {
+            font-family: monospace;
+            font-size: 0.875rem;
+            background-color: #f6f6f6;
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            word-break: break-all;
+        }
+    </style>
+    
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <!-- Header avec logo Marianne -->
+    <header class="fr-header">
+        <div class="fr-header__body">
+            <div class="fr-container">
+                <div class="fr-header__body-row">
+                    <div class="fr-header__brand fr-enlarge-link">
+                        <div class="fr-header__brand-top">
+                            <div class="fr-header__logo">
+                                <a href="/" title="Accueil - Moose">
+                                    <p class="fr-logo">
+                                        Ministère<br>de l'agriculture<br>et de la souveraineté<br>alimentaire
+                                    </p>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="fr-header__service">
+                            <a href="/" title="Accueil - Moose">
+                                <p class="fr-header__service-title">
+                                    🦌 Moose
+                                </p>
+                            </a>
+                            <p class="fr-header__service-tagline">
+                                Générateur d'URLs d'API Grist avec filtres
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenu principal -->
+    <main class="fr-container fr-py-6w">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="fr-footer" role="contentinfo">
+        <div class="fr-container">
+            <div class="fr-footer__body">
+                <div class="fr-footer__brand fr-enlarge-link">
+                    <a href="/" title="Retour à l'accueil">
+                        <p class="fr-logo">
+                            Ministère<br>de l'agriculture<br>et de la souveraineté<br>alimentaire
+                        </p>
+                    </a>
+                </div>
+                <div class="fr-footer__content">
+                    <p class="fr-footer__content-desc">
+                        Outil de génération d'URLs d'API Grist développé par le Ministère de l'Agriculture et de la Souveraineté alimentaire.
+                    </p>
+                    <ul class="fr-footer__content-list">
+                        <li class="fr-footer__content-item">
+                            <a class="fr-footer__content-link" href="https://grist.numerique.gouv.fr" target="_blank" rel="noopener">
+                                Accéder à Grist
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="fr-footer__bottom">
+                <ul class="fr-footer__bottom-list">
+                    <li class="fr-footer__bottom-item">
+                        <span class="fr-footer__bottom-link">
+                            Version sécurisée - Token chiffré
+                        </span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+
+    <!-- DSFR JavaScript -->
+    <script src="https://unpkg.com/@gouvfr/dsfr@1.11.0/dist/dsfr.min.js"></script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>
