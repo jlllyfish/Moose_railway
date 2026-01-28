@@ -1,0 +1,292 @@
+/* Styles personnalisés pour le générateur d'URL Grist */
+
+/* ========================================
+   RESET ET CORRECTIONS GLOBALES DSFR
+   ======================================== */
+
+/* S'assurer que box-sizing est appliqué partout */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+/* Reset des marges par défaut qui peuvent causer des décalages */
+.fr-container > *:first-child,
+.fr-grid-row > *:first-child,
+.fr-col > *:first-child,
+[class*="fr-col-"] > *:first-child {
+    margin-top: 0 !important;
+}
+
+.fr-container > *:last-child,
+.fr-grid-row > *:last-child,
+.fr-col > *:last-child,
+[class*="fr-col-"] > *:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* ========================================
+   CORRECTIONS POUR LES BLOCS
+   ======================================== */
+
+/* Éviter le margin collapse */
+.fr-container,
+.fr-grid-row {
+    /* Créer un nouveau contexte de formatage de bloc */
+    display: flow-root;
+}
+
+/* Alternative si flow-root n'est pas supporté */
+.fr-container::after,
+.fr-grid-row::after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+/* Correction des espacements verticaux */
+.fr-grid-row {
+    /* Éviter les marges négatives qui peuvent causer des décalages */
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+/* Gestion cohérente des espacements entre blocs */
+.content-block,
+.fr-card,
+.fr-callout,
+.fr-alert,
+.fr-highlight,
+.fr-quote,
+.fr-table,
+.fr-tabs,
+.fr-accordion {
+    /* Espacements verticaux cohérents */
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Premier et dernier élément sans marge */
+.content-block:first-child,
+.fr-card:first-child,
+.fr-callout:first-child,
+.fr-alert:first-child,
+.fr-highlight:first-child,
+.fr-quote:first-child,
+.fr-table:first-child,
+.fr-tabs:first-child,
+.fr-accordion:first-child {
+    margin-top: 0;
+}
+
+.content-block:last-child,
+.fr-card:last-child,
+.fr-callout:last-child,
+.fr-alert:last-child,
+.fr-highlight:last-child,
+.fr-quote:last-child,
+.fr-table:last-child,
+.fr-tabs:last-child,
+.fr-accordion:last-child {
+    margin-bottom: 0;
+}
+
+/* ========================================
+   CORRECTIONS POUR LA GRILLE
+   ======================================== */
+
+/* S'assurer que les colonnes respectent leur taille */
+.fr-col,
+[class*="fr-col-"] {
+    /* Éviter que le contenu dépasse */
+    min-width: 0;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Correction des gutters */
+.fr-grid-row--gutters {
+    /* S'assurer que les marges négatives ne causent pas de débordement */
+    overflow: hidden;
+}
+
+/* ========================================
+   STYLES EXISTANTS (conservés)
+   ======================================== */
+
+/* Amélioration de l'espacement entre les sections */
+.fr-mb-4w {
+    margin-bottom: 2rem !important;
+}
+
+/* Ajustements pour les métadonnées */
+.fr-metadata {
+    background-color: var(--background-alt-grey);
+    padding: 1rem;
+    border-radius: 0.25rem;
+    border-left: 4px solid var(--border-default-blue-france);
+}
+
+.fr-metadata dt {
+    font-weight: 600;
+    color: var(--text-title-grey);
+    margin-bottom: 0.25rem;
+}
+
+.fr-metadata dd {
+    margin-bottom: 0.75rem;
+    color: var(--text-default-grey);
+}
+
+.fr-metadata dd:last-child {
+    margin-bottom: 0;
+}
+
+/* Amélioration du code dans les highlights */
+.fr-highlight pre {
+    max-height: 400px;
+    overflow-y: auto;
+    word-break: break-all;
+    white-space: pre-wrap;
+    font-family: 'Courier New', monospace;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    margin: 0;
+    padding: 1rem;
+}
+
+/* Espacement des boutons */
+.fr-btns-group--inline .fr-btn + .fr-btn {
+    margin-left: 0.5rem;
+}
+
+/* Amélioration des sélecteurs */
+.fr-select:disabled {
+    background-color: var(--background-disabled-grey);
+    color: var(--text-disabled-grey);
+}
+
+.fr-btn:disabled {
+    background-color: var(--background-disabled-grey);
+    color: var(--text-disabled-grey);
+    cursor: not-allowed;
+}
+
+/* ========================================
+   CORRECTIONS SPÉCIFIQUES ACCORDÉON
+   ======================================== */
+
+/* Styles de fallback pour l'accordéon au cas où le DSFR ne fonctionne pas */
+.fr-accordion {
+    border: 1px solid #ddd;
+    border-radius: 0.25rem;
+    margin-bottom: 1rem;
+}
+
+.fr-accordion__title {
+    margin: 0;
+}
+
+.fr-accordion__btn {
+    width: 100%;
+    padding: 1rem;
+    background: #f8f9fa;
+    border: none;
+    text-align: left;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+/* Correction pour les collapse */
+.fr-collapse {
+    /* Éviter les animations qui peuvent causer des décalages */
+    transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+/* S'assurer que les éléments cachés ne prennent pas de place */
+.fr-collapse:not(.fr-collapse--expanded) {
+    max-height: 0 !important;
+    overflow: hidden !important;
+    opacity: 0;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* ========================================
+   HELPERS UTILITAIRES
+   ======================================== */
+
+/* Classes utilitaires pour forcer la correction */
+.no-margin-top {
+    margin-top: 0 !important;
+}
+
+.no-margin-bottom {
+    margin-bottom: 0 !important;
+}
+
+.no-margin {
+    margin: 0 !important;
+}
+
+/* Forcer un contexte de formatage de bloc */
+.block-formatting-context {
+    overflow: auto;
+}
+
+/* Alternative moderne */
+.contain-floats {
+    display: flow-root;
+}
+
+/* ========================================
+   CORRECTIONS POUR LES ÉLÉMENTS FLOTTANTS
+   ======================================== */
+
+/* Clear les floats qui peuvent causer des décalages */
+.clearfix::after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+/* S'assurer que les images ne dépassent pas */
+img,
+svg,
+video,
+canvas,
+audio,
+iframe,
+embed,
+object {
+    max-width: 100%;
+    height: auto;
+    vertical-align: middle;
+}
+
+/* ========================================
+   MEDIA QUERIES POUR RESPONSIVE
+   ======================================== */
+
+@media (max-width: 48em) {
+    /* Ajustements mobiles */
+    .fr-container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    .content-block,
+    .fr-card,
+    .fr-callout,
+    .fr-alert,
+    .fr-highlight,
+    .fr-quote,
+    .fr-table,
+    .fr-tabs,
+    .fr-accordion {
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+    }
+}
