@@ -173,6 +173,11 @@ def index():
     """Page principale avec le formulaire"""
     return render_template('index.html')
 
+@app.route('/widget')
+def widget():
+    """Widget Grist - Doc ID auto, token manuel"""
+    return render_template('widget.html')
+
 @app.route('/test_api', methods=['POST'])
 @limiter.limit("10 per minute")
 def test_api():
