@@ -312,8 +312,15 @@ def internal_error(error):
 @app.after_request
 def set_security_headers(response):
     response.headers['X-Content-Type-Options'] = 'nosniff'
-    response.headers['X-Frame-Options'] = 'DENY'
     response.headers['X-XSS-Protection'] = '1; mode=block'
+    
+    if request.path == '/widget':
+        # Autoriser uniquement Grist
+        response.headers['Content-Security-Policy'] = "frame-ancestors https://*.getgrist.com https://grist.numerique.gouv.fr"
+        # Pas de X-Frame-Options (CSP prioritaire)
+    else:
+        response.headers['X-Frame-Options'] = 'DENY'
+    
     if request.is_secure:
         response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
     return response
