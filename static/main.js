@@ -58,32 +58,41 @@ document.addEventListener('DOMContentLoaded', function() {
             delete button.dataset.originalText;
         }
     }
-
-    // Test de la clé API
-    elements.testApiBtn.addEventListener('click', async function() {
-        console.log('Test de la clé API lancé');
+// Test de la clé API
+elements.testApiBtn.addEventListener('click', async function() {
+    const apiKey = getApiKey();
+    
+    if (!apiKey) {
+        showModal('Erreur', 'Veuillez saisir votre token API', true);
+        return;
+    }
+    
+    console.log('Test de la clé API lancé');
+    setButtonLoading(this, true, 'Tester le token');
+    
+    try {
+        const response = await fetch('/test_api', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ api_key: apiKey })
+        });
         
-        setButtonLoading(this, true, 'Tester la clé API');
+        const data = await response.json();
         
-        try {
-            console.log('Appel vers /test_api');
-            const response = await fetch('/test_api');
-            console.log('Réponse:', response.status);
-            const data = await response.json();
-            console.log('Données reçues:', data);
-            
-            if (data.success) {
-                showModal('Test réussi', `✅ ${data.message}`);
-            } else {
-                showModal('Erreur de clé API', `Problème avec la clé API :\n\n${data.message}\n\nVérifiez votre fichier .env`, true);
-            }
-        } catch (error) {
-            console.error('Erreur complète:', error);
-            showModal('Erreur de test', `Erreur de test: ${error.message}\n\nVérifiez que l'application Flask fonctionne.`, true);
+        if (data.success) {
+            showModal('Test réussi', `✅ ${data.message}`);
+        } else {
+            showModal('Erreur de token API', `Problème avec le token API :\n\n${data.message}\n\nVérifiez votre token Grist`, true);
         }
-        
-        setButtonLoading(this, false);
-    });
+    } catch (error) {
+        console.error('Erreur complète:', error);
+        showModal('Erreur de test', `Erreur de test: ${error.message}`, true);
+    }
+    
+    setButtonLoading(this, false);
+});
 
     // Fonction pour nettoyer les résultats de test
     function clearTestResults() {
@@ -465,4 +474,5 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialisation
     console.log('🚀 Application initialisée');
+
 });
