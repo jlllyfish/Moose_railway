@@ -271,6 +271,29 @@ document.addEventListener("DOMContentLoaded", function () {
       testContainer.setAttribute("data-test-result", "true");
       testContainer.appendChild(clone);
       elements.result.appendChild(testContainer);
+
+      // Activer l'accordéon manuellement
+      const accordionBtn = testContainer.querySelector(".fr-accordion__btn");
+      const accordionCollapse = testContainer.querySelector(".fr-collapse");
+      
+      if (accordionBtn && accordionCollapse) {
+        accordionBtn.addEventListener("click", function(e) {
+          e.preventDefault();
+          const isExpanded = this.getAttribute("aria-expanded") === "true";
+          
+          if (isExpanded) {
+            this.setAttribute("aria-expanded", "false");
+            accordionCollapse.classList.remove("fr-collapse--expanded");
+          } else {
+            this.setAttribute("aria-expanded", "true");
+            accordionCollapse.classList.add("fr-collapse--expanded");
+          }
+        });
+        
+        // Ouvrir par défaut
+        accordionBtn.setAttribute("aria-expanded", "true");
+        accordionCollapse.classList.add("fr-collapse--expanded");
+      }
     } catch (error) {
       showModal("Erreur", "Erreur test: " + error.message);
     }
