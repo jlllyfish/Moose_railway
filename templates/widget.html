@@ -24,20 +24,37 @@
         .fr-input-group {
             margin-bottom: 1rem;
         }
-        .widget-header {
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid #ddd;
-        }
     </style>
 </head>
 <body>
-    <div class="widget-container">
-        <!-- Header -->
-        <div class="widget-header">
-            <h1 class="fr-h4">🦌 Moose - Générateur d'URLs Grist</h1>
-            <p class="fr-text--sm" style="color: #666; margin: 0;">Widget intégré</p>
+    <!-- Header Marianne -->
+    <header class="fr-header" style="margin: -1rem -1rem 1rem -1rem;">
+        <div class="fr-header__body">
+            <div class="fr-container">
+                <div class="fr-header__body-row">
+                    <div class="fr-header__brand fr-enlarge-link">
+                        <div class="fr-header__brand-top">
+                            <div class="fr-header__logo">
+                                <p class="fr-logo">
+                                    Ministère<br>de l'agriculture<br>et de la souveraineté<br>alimentaire
+                                </p>
+                            </div>
+                        </div>
+                        <div class="fr-header__service">
+                            <p class="fr-header__service-title">
+                                🦌 Moose
+                            </p>
+                            <p class="fr-header__service-tagline">
+                                Générateur d'URLs d'API Grist
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+    </header>
+
+    <div class="widget-container">
 
         <!-- Formulaire -->
         <div id="widgetForm">
@@ -131,6 +148,24 @@
             <p>Génération en cours...</p>
         </div>
     </div>
+
+    <!-- Footer -->
+    <footer class="fr-footer" role="contentinfo" style="margin: 1rem -1rem -1rem -1rem;">
+        <div class="fr-container">
+            <div class="fr-footer__body">
+                <div class="fr-footer__brand fr-enlarge-link">
+                    <p class="fr-logo">
+                        Ministère<br>de l'agriculture<br>et de la souveraineté<br>alimentaire
+                    </p>
+                </div>
+                <div class="fr-footer__content">
+                    <p class="fr-footer__content-desc">
+                        Widget Grist - Outil de génération d'URLs d'API Grist
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
 
     <!-- Modale -->
     <dialog aria-labelledby="modal-title" role="dialog" id="modal" class="fr-modal">
