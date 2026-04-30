@@ -1,0 +1,299 @@
+{% extends "base.html" %} {% block content %}
+<div class="fr-grid-row fr-grid-row--center">
+  <div class="fr-col-12 fr-col-md-10 fr-col-lg-8">
+    <!-- Titre principal -->
+    <h1 class="fr-h1 fr-mb-4w">🦌 Moose</h1>
+
+    <!-- Alerte d'information -->
+    <div class="fr-alert fr-alert--info fr-mb-4w">
+      <h3 class="fr-alert__title">Information</h3>
+      <p>
+        Cet outil vous permet de générer des URLs d'API Grist avec filtres pour
+        intégrer vos données dans le champ référentiel avancé de Démarche
+        Numérique.
+      </p>
+    </div>
+
+    <!-- Formulaire unique -->
+    <form id="urlForm" class="fr-form">
+      <!-- Token API -->
+      <div class="fr-input-group fr-mb-3w">
+        <label class="fr-label" for="api_key">
+          Token API Grist
+          <span class="fr-hint-text">Requis</span>
+        </label>
+        <input
+          class="fr-input"
+          type="password"
+          id="api_key"
+          name="api_key"
+          required
+          placeholder="Votre token API Grist"
+        />
+        <div class="fr-hint-text">
+          Générez votre token dans les paramètres de votre compte Grist
+        </div>
+      </div>
+
+      <!-- Test de la clé API -->
+      <div class="fr-mb-4w">
+        <button
+          class="fr-btn fr-btn--secondary fr-btn--sm"
+          type="button"
+          id="testApiBtn"
+        >
+          Tester le token
+        </button>
+      </div>
+
+      <!-- Document ID -->
+      <div class="fr-input-group fr-mb-3w">
+        <label class="fr-label" for="doc_id"> ID du document Grist </label>
+        <input
+          class="fr-input"
+          type="text"
+          id="doc_id"
+          name="doc_id"
+          required
+          placeholder="Ex: cTdjBRNu26yTzGusvQKffu"
+        />
+        <div class="fr-hint-text">
+          Trouvez l'ID dans l'URL de votre document Grist :
+          https://grist.../docs/<strong>ID_DU_DOCUMENT</strong>/...
+        </div>
+      </div>
+
+      <!-- Bouton de chargement des tables -->
+      <div class="fr-mb-3w">
+        <button
+          type="button"
+          class="fr-btn fr-btn--secondary"
+          id="loadTablesBtn"
+          disabled
+        >
+          Charger les tables
+        </button>
+      </div>
+
+      <!-- Sélection de la table -->
+      <div class="fr-select-group fr-mb-3w">
+        <label class="fr-label" for="table_name">
+          Sélectionner une table
+        </label>
+        <select
+          class="fr-select"
+          id="table_name"
+          name="table_name"
+          required
+          disabled
+        >
+          <option value="">-- Charger d'abord les tables --</option>
+        </select>
+      </div>
+
+      <!-- Sélection de la colonne (obligatoire) -->
+      <div class="fr-select-group fr-mb-3w">
+        <label class="fr-label" for="column_name">
+          Sélectionner une colonne pour le filtre principal
+        </label>
+        <select
+          class="fr-select"
+          id="column_name"
+          name="column_name"
+          required
+          disabled
+        >
+          <option value="">-- Choisir d'abord une table --</option>
+        </select>
+      </div>
+
+      <!-- Checkbox Mode Avancé -->
+      <div class="fr-checkbox-group fr-mb-3w">
+        <input type="checkbox" id="advancedMode" name="advancedMode" disabled />
+        <label class="fr-label" for="advancedMode">
+          Activer les filtres multiples (mode avancé)
+        </label>
+        <div class="fr-hint-text">
+          Cochez pour combiner plusieurs colonnes avec des filtres fixes ou
+          dynamiques
+        </div>
+      </div>
+
+      <!-- Section Mode Simple (visible par défaut) -->
+      <div id="simpleMode" class="fr-mb-3w">
+        <!-- Bouton de génération simple -->
+        <div class="fr-mb-3w">
+          <button type="submit" class="fr-btn" id="generateBtn" disabled>
+            Générer l'URL
+          </button>
+        </div>
+      </div>
+
+      <!-- Section Mode Avancé (cachée par défaut) -->
+      <div id="advancedSection" style="display: none">
+        <div class="fr-callout fr-mb-3w">
+          <h3 class="fr-callout__title">Filtres multiples</h3>
+          <p class="fr-callout__text">
+            Ajoutez plusieurs filtres. Pour chaque filtre, choisissez une
+            colonne et soit un placeholder {id}, soit des valeurs fixes.
+          </p>
+        </div>
+
+        <!-- Builder de filtres -->
+        <div class="fr-mb-3w">
+          <div id="filters-container" class="fr-mb-2w">
+            <!-- Les filtres seront ajoutés dynamiquement ici -->
+          </div>
+          <button
+            type="button"
+            class="fr-btn fr-btn--secondary fr-btn--sm"
+            id="addFilterBtn"
+            disabled
+          >
+            + Ajouter un filtre
+          </button>
+        </div>
+
+        <div class="fr-mb-3w">
+          <button
+            type="button"
+            class="fr-btn"
+            id="generateAdvancedBtn"
+            disabled
+          >
+            Générer l'URL avancée
+          </button>
+        </div>
+      </div>
+    </form>
+
+    <!-- Indicateur de chargement -->
+    <div
+      class="fr-alert fr-alert--info fr-mb-4w"
+      id="loading"
+      style="display: none"
+    >
+      <h3 class="fr-alert__title">Génération en cours...</h3>
+      <p>Veuillez patienter pendant la génération de l'URL.</p>
+    </div>
+
+    <!-- Résultat -->
+    <div id="result" style="display: none"></div>
+
+    <!-- Bouton Recommencer -->
+    <div class="fr-mb-3w" id="resetSection" style="display: none">
+      <button
+        type="button"
+        class="fr-btn fr-icon-refresh-line fr-btn--icon-left"
+        id="resetBtn"
+      >
+        Recommencer
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modale pour les messages -->
+<dialog aria-labelledby="modal-title" role="dialog" id="modal" class="fr-modal">
+  <div class="fr-container fr-container--fluid fr-container-md">
+    <div class="fr-grid-row fr-grid-row--center">
+      <div class="fr-col-12 fr-col-md-8 fr-col-lg-6">
+        <div class="fr-modal__body">
+          <div class="fr-modal__header">
+            <button
+              class="fr-btn--close fr-btn"
+              aria-controls="modal"
+              title="Fermer"
+            >
+              Fermer
+            </button>
+          </div>
+          <div class="fr-modal__content">
+            <h1 id="modal-title" class="fr-modal__title">Information</h1>
+            <p id="modal-text">Message...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<!-- Template pour les résultats -->
+<template id="result-success-template">
+  <div class="fr-alert fr-alert--success fr-mb-4w">
+    <h3 class="fr-alert__title">URL générée avec succès</h3>
+    <p>L'URL d'API Grist a été générée et est prête à être utilisée.</p>
+  </div>
+
+  <div class="fr-card fr-card--no-arrow fr-mb-4w">
+    <div class="fr-card__body">
+      <div class="fr-card__content">
+        <h3 class="fr-card__title">URL générée</h3>
+        <div class="fr-highlight fr-mb-3w">
+          <pre id="generated-url" class="fr-text--sm"></pre>
+        </div>
+        <div class="fr-mb-3w">
+          <dl class="fr-metadata">
+            <dt>Document :</dt>
+            <dd id="doc-name">-</dd>
+            <dt>Document ID :</dt>
+            <dd id="doc-id">-</dd>
+            <dt>Table :</dt>
+            <dd id="table-name">-</dd>
+            <dt>Colonne de filtre :</dt>
+            <dd id="column-name">-</dd>
+            <dt>Format :</dt>
+            <dd id="format-info">-</dd>
+            <dt>Usage :</dt>
+            <dd id="usage-info">-</dd>
+          </dl>
+        </div>
+        <div class="fr-btns-group fr-btns-group--inline">
+          <button type="button" class="fr-btn fr-btn--secondary" id="copyBtn">
+            Copier l'URL
+          </button>
+          <button type="button" class="fr-btn" id="testUrlBtn">
+            Tester l'URL
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template id="result-error-template">
+  <div class="fr-alert fr-alert--error fr-mb-4w">
+    <h3 class="fr-alert__title">Erreur lors de la génération</h3>
+    <p id="error-message">-</p>
+  </div>
+</template>
+
+<!-- Template pour les résultats de test -->
+<template id="test-result-template">
+  <div class="fr-card fr-card--no-arrow fr-mb-4w">
+    <div class="fr-card__body">
+      <div class="fr-card__content">
+        <h3 class="fr-card__title">Résultat du test de l'URL</h3>
+
+        <section class="fr-accordion">
+          <h3 class="fr-accordion__title">
+            <button
+              type="button"
+              class="fr-accordion__btn"
+              aria-expanded="false"
+              aria-controls="accordion-test-result"
+            >
+              <span id="accordion-title">Afficher le résultat JSON</span>
+            </button>
+          </h3>
+          <div id="accordion-test-result" class="fr-collapse">
+            <div class="fr-highlight">
+              <pre id="raw-result" class="fr-text--sm">Chargement...</pre>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</template>
+{% endblock %}
