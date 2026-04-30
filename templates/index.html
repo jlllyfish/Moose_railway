@@ -8,13 +8,13 @@
     <div class="fr-alert fr-alert--info fr-mb-4w">
       <h3 class="fr-alert__title">Information</h3>
       <p>
-        Cet outil vous permet de générer des URLs d'API Grist avec filtres
-        dynamiques pour intégrer vos données dans le champ référentiel avancé de
-        Démarche Numérique.
+        Cet outil vous permet de générer des URLs d'API Grist avec filtres pour
+        intégrer vos données dans le champ référentiel avancé de Démarche
+        Numérique.
       </p>
     </div>
 
-    <!-- Formulaire principal -->
+    <!-- Formulaire unique -->
     <form id="urlForm" class="fr-form">
       <!-- Token API -->
       <div class="fr-input-group fr-mb-3w">
@@ -91,10 +91,10 @@
         </select>
       </div>
 
-      <!-- Sélection de la colonne -->
+      <!-- Sélection de la colonne (obligatoire) -->
       <div class="fr-select-group fr-mb-3w">
         <label class="fr-label" for="column_name">
-          Sélectionner une colonne
+          Sélectionner une colonne pour le filtre principal
         </label>
         <select
           class="fr-select"
@@ -107,11 +107,63 @@
         </select>
       </div>
 
-      <!-- Bouton de génération -->
-      <div class="fr-mb-3w">
-        <button type="submit" class="fr-btn" id="generateBtn" disabled>
-          Générer l'URL
-        </button>
+      <!-- Checkbox Mode Avancé -->
+      <div class="fr-checkbox-group fr-mb-3w">
+        <input type="checkbox" id="advancedMode" name="advancedMode" disabled />
+        <label class="fr-label" for="advancedMode">
+          Activer les filtres multiples (mode avancé)
+        </label>
+        <div class="fr-hint-text">
+          Cochez pour combiner plusieurs colonnes avec des filtres fixes ou
+          dynamiques
+        </div>
+      </div>
+
+      <!-- Section Mode Simple (visible par défaut) -->
+      <div id="simpleMode" class="fr-mb-3w">
+        <!-- Bouton de génération simple -->
+        <div class="fr-mb-3w">
+          <button type="submit" class="fr-btn" id="generateBtn" disabled>
+            Générer l'URL
+          </button>
+        </div>
+      </div>
+
+      <!-- Section Mode Avancé (cachée par défaut) -->
+      <div id="advancedSection" style="display: none">
+        <div class="fr-callout fr-mb-3w">
+          <h3 class="fr-callout__title">Filtres multiples</h3>
+          <p class="fr-callout__text">
+            Ajoutez plusieurs filtres. Pour chaque filtre, choisissez une
+            colonne et soit un placeholder {id}, soit des valeurs fixes.
+          </p>
+        </div>
+
+        <!-- Builder de filtres -->
+        <div class="fr-mb-3w">
+          <div id="filters-container" class="fr-mb-2w">
+            <!-- Les filtres seront ajoutés dynamiquement ici -->
+          </div>
+          <button
+            type="button"
+            class="fr-btn fr-btn--secondary fr-btn--sm"
+            id="addFilterBtn"
+            disabled
+          >
+            + Ajouter un filtre
+          </button>
+        </div>
+
+        <div class="fr-mb-3w">
+          <button
+            type="button"
+            class="fr-btn"
+            id="generateAdvancedBtn"
+            disabled
+          >
+            Générer l'URL avancée
+          </button>
+        </div>
       </div>
     </form>
 
@@ -127,6 +179,17 @@
 
     <!-- Résultat -->
     <div id="result" style="display: none"></div>
+
+    <!-- Bouton Recommencer -->
+    <div class="fr-mb-3w" id="resetSection" style="display: none">
+      <button
+        type="button"
+        class="fr-btn fr-icon-refresh-line fr-btn--icon-left"
+        id="resetBtn"
+      >
+        Recommencer
+      </button>
+    </div>
   </div>
 </div>
 
