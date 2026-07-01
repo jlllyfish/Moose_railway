@@ -241,6 +241,29 @@
   line-height: 1.4;
 }
 
+/* Mise en avant du bloc "colonne du filtre principal" */
+.fr-select-group.main-filter-highlight {
+  border: 2px solid var(--border-plain-blue-france, #000091);
+  border-radius: 0.25rem;
+  padding: 1rem;
+  background-color: var(--background-alt-blue-france, #f5f5fe);
+}
+
+.fr-select-group.main-filter-highlight .fr-select {
+  border-color: var(--border-plain-blue-france, #000091);
+}
+
+/* Mise en avant de la carte "filtre principal" dans le builder SQL */
+.fr-card.main-filter-highlight {
+  border: 2px solid var(--border-plain-blue-france, #000091);
+  background-color: var(--background-alt-blue-france, #f5f5fe);
+}
+
+.fr-badge--blue-france {
+  background-color: var(--background-plain-blue-france, #000091);
+  color: #fff;
+}
+
 /* ===== NOUVEAU CODE POUR REPOSITIONNER LES TITRES EN HAUT ===== */
 
 /* Forcer les titres en haut des cartes générées */
