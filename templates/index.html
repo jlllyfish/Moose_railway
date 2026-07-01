@@ -10,7 +10,8 @@
       <p>
         Cet outil vous permet de générer des URLs d'API Grist avec filtres pour
         intégrer vos données dans le champ référentiel avancé de Démarche
-        Numérique.
+        Numérique. La colonne choisie comme <strong>filtre principal</strong>
+        correspondra à la valeur saisie par l'usager dans DN.
       </p>
     </div>
 
@@ -91,10 +92,13 @@
         </select>
       </div>
 
-      <!-- Sélection de la colonne (obligatoire) -->
-      <div class="fr-select-group fr-mb-3w">
+      <!-- Sélection de la colonne (obligatoire) - filtre principal -->
+      <div class="fr-select-group fr-mb-3w main-filter-highlight">
         <label class="fr-label" for="column_name">
           Sélectionner une colonne pour le filtre principal
+          <span class="fr-hint-text">
+            (valeur saisie par l'usager dans DN)
+          </span>
         </label>
         <select
           class="fr-select"
@@ -109,18 +113,27 @@
 
       <!-- Checkbox Mode Avancé -->
       <div class="fr-checkbox-group fr-mb-3w">
-        <input type="checkbox" id="advancedMode" name="advancedMode" disabled />
+        <input type="checkbox" id="advancedMode" name="advancedMode" />
         <label class="fr-label" for="advancedMode">
-          Activer les filtres multiples (mode avancé)
+          Activer les conditions SQL avancées (mode avancé)
         </label>
         <div class="fr-hint-text">
-          Cochez pour combiner plusieurs colonnes avec des filtres fixes ou
-          dynamiques
+          Cochez pour combiner plusieurs colonnes avec des conditions exactes,
+          "contient" (insensible à la casse) ou listes de valeurs
         </div>
       </div>
 
       <!-- Section Mode Simple (visible par défaut) -->
       <div id="simpleMode" class="fr-mb-3w">
+        <div class="fr-alert fr-alert--info fr-alert--sm fr-mb-3w">
+          <p>
+            Ce mode génère un filtre <strong>exact</strong> (la colonne choisie
+            doit correspondre exactement à la valeur saisie par l'usager). Pour
+            une recherche partielle ("contient", "commence par") ou insensible à
+            la casse, activez les
+            <strong>conditions SQL avancées</strong> ci-dessus.
+          </p>
+        </div>
         <!-- Bouton de génération simple -->
         <div class="fr-mb-3w">
           <button type="submit" class="fr-btn" id="generateBtn" disabled>
@@ -129,39 +142,111 @@
         </div>
       </div>
 
-      <!-- Section Mode Avancé (cachée par défaut) -->
+      <!-- Section Mode Avancé SQL (cachée par défaut) -->
       <div id="advancedSection" style="display: none">
         <div class="fr-callout fr-mb-3w">
-          <h3 class="fr-callout__title">Filtres multiples</h3>
+          <h3 class="fr-callout__title">Conditions SQL</h3>
           <p class="fr-callout__text">
-            Ajoutez plusieurs filtres. Pour chaque filtre, choisissez une
-            colonne et soit un placeholder {id}, soit des valeurs fixes.
+            Ajoutez plusieurs conditions. La première condition (encadrée en
+            bleu) correspond au <strong>filtre principal</strong> : la valeur
+            saisie par l'usager dans DN. Pour chaque condition, choisissez une
+            colonne, un opérateur (exact, contient, dans une liste) et soit un
+            placeholder {id}, soit une valeur fixe. Toutes les conditions sont
+            combinées avec le connecteur choisi ci-dessous.
           </p>
         </div>
 
-        <!-- Builder de filtres -->
+        <!-- Connecteur global -->
+        <div class="fr-radio-group fr-mb-3w">
+          <label class="fr-label">Combiner les conditions avec :</label>
+          <div
+            class="fr-fieldset__element"
+            style="display: inline-block; margin-right: 1.5rem"
+          >
+            <div class="fr-radio-group">
+              <input
+                type="radio"
+                id="connectorAnd"
+                name="connector"
+                value="AND"
+                checked
+              />
+              <label class="fr-label" for="connectorAnd"
+                >ET (toutes les conditions)</label
+              >
+            </div>
+          </div>
+          <div class="fr-fieldset__element" style="display: inline-block">
+            <div class="fr-radio-group">
+              <input
+                type="radio"
+                id="connectorOr"
+                name="connector"
+                value="OR"
+              />
+              <label class="fr-label" for="connectorOr"
+                >OU (au moins une condition)</label
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- Builder de conditions -->
         <div class="fr-mb-3w">
-          <div id="filters-container" class="fr-mb-2w">
-            <!-- Les filtres seront ajoutés dynamiquement ici -->
+          <div id="conditions-container" class="fr-mb-2w">
+            <!-- Les conditions seront ajoutées dynamiquement ici -->
           </div>
           <button
             type="button"
             class="fr-btn fr-btn--secondary fr-btn--sm"
-            id="addFilterBtn"
+            id="addConditionBtn"
             disabled
           >
-            + Ajouter un filtre
+            + Ajouter une condition
           </button>
         </div>
 
+        <!-- Tri et limite -->
+        <div class="fr-grid-row fr-grid-row--gutters fr-mb-3w">
+          <div class="fr-col-12 fr-col-md-5">
+            <div class="fr-select-group">
+              <label class="fr-label" for="orderByColumn">
+                Trier par (optionnel)
+              </label>
+              <select class="fr-select" id="orderByColumn">
+                <option value="">-- Aucun tri --</option>
+              </select>
+            </div>
+          </div>
+          <div class="fr-col-12 fr-col-md-3">
+            <div class="fr-select-group">
+              <label class="fr-label" for="orderByDirection">Ordre</label>
+              <select class="fr-select" id="orderByDirection">
+                <option value="ASC">Croissant</option>
+                <option value="DESC">Décroissant</option>
+              </select>
+            </div>
+          </div>
+          <div class="fr-col-12 fr-col-md-4">
+            <div class="fr-input-group">
+              <label class="fr-label" for="sqlLimit">
+                Nombre max de résultats
+              </label>
+              <input
+                class="fr-input"
+                type="number"
+                id="sqlLimit"
+                min="1"
+                max="500"
+                value="20"
+              />
+            </div>
+          </div>
+        </div>
+
         <div class="fr-mb-3w">
-          <button
-            type="button"
-            class="fr-btn"
-            id="generateAdvancedBtn"
-            disabled
-          >
-            Générer l'URL avancée
+          <button type="button" class="fr-btn" id="generateSqlBtn" disabled>
+            Générer l'URL SQL
           </button>
         </div>
       </div>
@@ -182,12 +267,8 @@
 
     <!-- Bouton Recommencer -->
     <div class="fr-mb-3w" id="resetSection" style="display: none">
-      <button
-        type="button"
-        class="fr-btn fr-icon-refresh-line fr-btn--icon-left"
-        id="resetBtn"
-      >
-        Recommencer
+      <button type="button" class="fr-btn fr-btn--secondary" id="resetBtn">
+        🔄 Recommencer
       </button>
     </div>
   </div>
