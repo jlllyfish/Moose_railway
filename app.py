@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import urllib.parse
 
 import requests
@@ -180,10 +181,100 @@ class GristAPIClient:
         print(f"📋 Filtre décodé: {urllib.parse.unquote(filter_encoded)}")
         return url
 
-    def test_url(self, url, test_value, api_key=None):
-        """Teste une URL générée avec une valeur de test"""
-        # Remplacer {id} par la valeur de test dans l'URL
-        test_url = url.replace("{id}", str(test_value))
+    def generate_sql_url(
+        self, doc_id, table_name, conditions, connector="AND", order_by=None, limit=20
+    ):
+        """
+        Génère une URL utilisant l'endpoint /sql de Grist.
+        conditions = [
+            {'column': 'usager_email', 'operator': 'contains', 'type': 'dynamic'},
+            {'column': 'state', 'operator': 'exact', 'type': 'fixed', 'value': 'accepte'},
+            {'column': 'Nature', 'operator': 'in', 'type': 'fixed', 'values': ['LPA', 'LEGTA']}
+        ]
+        order_by = {'column': 'usager_email', 'direction': 'ASC'}  # optionnel
+
+        Chaque condition dynamique reçoit un placeholder unique : la première
+        utilise {id} (compatibilité avec le filtre principal), les suivantes
+        {id2}, {id3}, etc. Cela permet à DN d'insérer une balise différente
+        pour chaque placeholder.
+        """
+
+        def validate_column(col):
+            if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", col):
+                raise ValueError(f"Nom de colonne invalide : {col}")
+            return col
+
+        def escape_sql_string(value):
+            # Échappement standard SQL : une apostrophe devient deux apostrophes
+            return str(value).replace("'", "''")
+
+        where_clauses = []
+        dynamic_count = 0
+
+        for cond in conditions:
+            col = validate_column(cond["column"])
+            operator = cond["operator"]
+            is_dynamic = cond.get("type") == "dynamic"
+
+            if is_dynamic:
+                dynamic_count += 1
+                placeholder = "{id}" if dynamic_count == 1 else f"{{id{dynamic_count}}}"
+
+            if operator == "exact":
+                value = (
+                    f"'{placeholder}'"
+                    if is_dynamic
+                    else f"'{escape_sql_string(cond['value'])}'"
+                )
+                where_clauses.append(f"{col} = {value}")
+
+            elif operator == "contains":
+                value = placeholder if is_dynamic else escape_sql_string(cond["value"])
+                where_clauses.append(f"lower({col}) LIKE lower('%{value}%')")
+
+            elif operator == "startswith":
+                value = placeholder if is_dynamic else escape_sql_string(cond["value"])
+                where_clauses.append(f"lower({col}) LIKE lower('{value}%')")
+
+            elif operator == "in":
+                if is_dynamic:
+                    # IN dynamique peu utile en pratique mais géré pour cohérence
+                    where_clauses.append(f"{col} = '{placeholder}'")
+                else:
+                    values = cond.get("values", [])
+                    escaped = ", ".join(f"'{escape_sql_string(v)}'" for v in values)
+                    where_clauses.append(f"{col} IN ({escaped})")
+            else:
+                raise ValueError(f"Opérateur inconnu : {operator}")
+
+        where_sql = f" {connector} ".join(where_clauses) if where_clauses else "1=1"
+
+        sql = f"SELECT * FROM {table_name} WHERE {where_sql}"
+
+        if order_by and order_by.get("column"):
+            order_col = validate_column(order_by["column"])
+            direction = "DESC" if order_by.get("direction") == "DESC" else "ASC"
+            sql += f" ORDER BY {order_col} {direction}"
+
+        sql += f" LIMIT {int(limit)}"
+
+        # Encoder, puis dé-encoder tous les placeholders {id}, {id2}, {id3}...
+        sql_encoded = urllib.parse.quote(sql)
+        sql_encoded = re.sub(r"%7B(id\d*)%7D", r"{\1}", sql_encoded)
+
+        url = f"{self.base_url}/api/docs/{doc_id}/sql?q={sql_encoded}"
+        print("🔗 URL SQL générée")
+        print(f"📋 Requête décodée: {sql}")
+        return url
+
+    def test_url(self, url, test_values, api_key=None):
+        """
+        Teste une URL générée en remplaçant chaque placeholder par sa valeur.
+        test_values = {'id': 'cam', 'id2': 'accepte'}
+        """
+        test_url = url
+        for placeholder_name, value in test_values.items():
+            test_url = test_url.replace("{" + placeholder_name + "}", str(value))
         try:
             print("🧪 Test de l'URL")
             response = requests.get(test_url, headers=self.get_headers(api_key))
@@ -300,8 +391,8 @@ def generate_url():
             "doc_id": doc_id,
             "table": table_name,
             "column": column_name,
-            "format_info": "Remplacez {id} par le tag Démarches Numériques",
-            "usage": "Dans Démarches Numériques : insérez la balise \"Valeur saisie par l'usager\" à la place de {{id}} pour construire l'URL dynamique",
+            "format_info": "Remplacez {id} par le tag Démarche Numérique",
+            "usage": "Dans Démarche Numérique : insérez la balise \"Valeur saisie par l'usager\" à la place de {{id}} pour construire l'URL dynamique",
         }
     )
 
@@ -333,8 +424,8 @@ def generate_url_advanced():
                 "doc_id": doc_id,
                 "table": table_name,
                 "filters": filters,
-                "format_info": "Remplacez {id} par le tag Démarches Numériques",
-                "usage": "Dans Démarches Numériques : insérez la balise \"Valeur saisie par l'usager\" à la place de {id} pour construire l'URL dynamique",
+                "format_info": "Remplacez {id} par le tag Démarche Numérique",
+                "usage": "Dans Démarche Numérique : insérez la balise \"Valeur saisie par l'usager\" à la place de {id} pour construire l'URL dynamique",
             }
         )
 
@@ -342,20 +433,69 @@ def generate_url_advanced():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/generate_url_sql", methods=["POST"])
+@limiter.limit("20 per minute")
+def generate_url_sql():
+    """Génère l'URL d'API Grist via l'endpoint /sql (mode avancé SQL)"""
+    try:
+        data = request.get_json()
+        doc_id = data.get("doc_id")
+        table_name = data.get("table_name")
+        conditions = data.get("conditions", [])
+        connector = data.get("connector", "AND")
+        order_by = data.get("order_by")  # optionnel: {'column': ..., 'direction': ...}
+        limit = data.get("limit", 20)
+        api_key = data.get("api_key", "")
+
+        if not doc_id or not table_name or not conditions:
+            return jsonify({"error": "Document ID, table et conditions requis"}), 400
+
+        if connector not in ("AND", "OR"):
+            return jsonify({"error": "Le connecteur doit être AND ou OR"}), 400
+
+        # Récupération du nom du document
+        doc_name = grist_client.get_document_info(doc_id, api_key)
+
+        # Générer l'URL SQL
+        url = grist_client.generate_sql_url(
+            doc_id, table_name, conditions, connector, order_by, limit
+        )
+
+        return jsonify(
+            {
+                "url": url,
+                "doc_name": doc_name,
+                "doc_id": doc_id,
+                "table": table_name,
+                "conditions": conditions,
+                "connector": connector,
+                "order_by": order_by,
+                "limit": limit,
+                "format_info": "Remplacez chaque {id}, {id2}, {id3}... par le tag Démarche Numérique correspondant",
+                "usage": "Dans Démarche Numérique : insérez la balise \"Valeur saisie par l'usager\" à la place de {id}. S'il y a d'autres placeholders ({id2}, {id3}...), remplacez-les par les balises des champs du formulaire déjà renseignés par l'usager, dans l'ordre où ils apparaissent dans l'URL.",
+            }
+        )
+
+    except ValueError as e:
+        return jsonify({"error": f"Erreur de validation : {str(e)}"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/test_url", methods=["POST"])
 @limiter.limit("15 per minute")
 def test_url_endpoint():
-    """Teste une URL générée avec une valeur de test"""
+    """Teste une URL générée avec une ou plusieurs valeurs de test"""
     try:
         data = request.get_json()
         url = data.get("url")
-        test_value = data.get("test_value")
+        test_values = data.get("test_values")
         api_key = data.get("api_key", "")
 
-        if not url or not test_value:
-            return jsonify({"error": "URL et valeur de test requis"}), 400
+        if not url or not test_values:
+            return jsonify({"error": "URL et valeurs de test requis"}), 400
 
-        result = grist_client.test_url(url, test_value, api_key)
+        result = grist_client.test_url(url, test_values, api_key)
 
         if result["success"]:
             return jsonify(
