@@ -98,16 +98,16 @@ document.addEventListener("DOMContentLoaded", function () {
       const data = await response.json();
 
       if (data.success) {
-        showModal("Test réussi", `âœ… ${data.message}`);
+        showModal("Test réussi", `✅ ${data.message}`);
       } else {
         showModal(
           "Erreur de token API",
-          `ProblÃ¨me avec le token API :\n\n${data.message}\n\nVérifiez votre token Grist`,
+          `Problème avec le token API :\n\n${data.message}\n\nVérifiez votre token Grist`,
           true,
         );
       }
     } catch (error) {
-      console.error("Erreur complÃ¨te:", error);
+      console.error("Erreur complète:", error);
       showModal("Erreur de test", `Erreur de test: ${error.message}`, true);
     }
 
@@ -173,7 +173,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       const tables = await response.json();
-      console.log("Tables reÃ§ues:", tables);
+      console.log("Tables reçues:", tables);
 
       if (tables && tables.length > 0) {
         elements.tableSelect.innerHTML =
@@ -186,9 +186,9 @@ document.addEventListener("DOMContentLoaded", function () {
         });
         elements.tableSelect.disabled = false;
 
-        // Afficher un message de succÃ¨s temporaire
+        // Afficher un message de succès temporaire
         const originalText = this.textContent;
-        this.textContent = `âœ“ ${tables.length} tables chargées`;
+        this.textContent = `✓ ${tables.length} tables chargées`;
         this.classList.add("fr-btn--success");
 
         setTimeout(() => {
@@ -205,7 +205,7 @@ document.addEventListener("DOMContentLoaded", function () {
         );
       }
     } catch (error) {
-      console.error("Erreur complÃ¨te:", error);
+      console.error("Erreur complète:", error);
       showModal("Erreur de connexion", `Erreur: ${error.message}`, true);
     }
 
@@ -269,7 +269,7 @@ document.addEventListener("DOMContentLoaded", function () {
     currentUrl = null;
   });
 
-  // Fonction pour afficher les résultats de succÃ¨s
+  // Fonction pour afficher les résultats de succès
   function showSuccessResult(data) {
     const template = document.getElementById("result-success-template");
     const clone = template.content.cloneNode(true);
@@ -328,7 +328,7 @@ document.addEventListener("DOMContentLoaded", function () {
       });
 
       const data = await response.json();
-      console.log("ðŸ” Données reÃ§ues du serveur:", data);
+      console.log("🔍 Données reçues du serveur:", data);
 
       if (response.ok) {
         showSuccessResult(data);
@@ -336,7 +336,7 @@ document.addEventListener("DOMContentLoaded", function () {
         showErrorResult(data.error || "Erreur inconnue");
       }
     } catch (error) {
-      console.error("ðŸ”¥ Erreur lors de la génération:", error);
+      console.error("🔥 Erreur lors de la génération:", error);
       showErrorResult(`Erreur de connexion: ${error.message}`);
     }
 
@@ -412,7 +412,7 @@ document.addEventListener("DOMContentLoaded", function () {
     testContainer.setAttribute("data-test-result", "true");
     testContainer.appendChild(clone);
 
-    // Ajouter aprÃ¨s le résultat principal
+    // Ajouter après le résultat principal
     elements.result.appendChild(testContainer);
 
     const rawResult = testContainer.querySelector("#raw-result");
@@ -425,7 +425,7 @@ document.addEventListener("DOMContentLoaded", function () {
     accordionTitle.textContent = "Chargement des résultats...";
 
     try {
-      console.log("Appel Ã  /test_url avec:", { url, test_values: testValues });
+      console.log("Appel à /test_url avec:", { url, test_values: testValues });
 
       // Appeler la route Flask pour tester l'URL
       const response = await fetch("/test_url", {
@@ -450,7 +450,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Afficher le JSON brut
         rawResult.textContent = JSON.stringify(data, null, 2);
 
-        // Mettre Ã  jour le titre de l'accordéon
+        // Mettre à jour le titre de l'accordéon
         accordionTitle.textContent = `Résultat JSON (${recordCount} enregistrement${
           recordCount > 1 ? "s" : ""
         } trouvé${recordCount > 1 ? "s" : ""})`;
