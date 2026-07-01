@@ -8,11 +8,19 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template, request
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 # Chargement des variables d'environnement
 load_dotenv()
 
 app = Flask(__name__)
+
+# Fait confiance aux en-têtes X-Forwarded-* du proxy Railway (1 seul saut de
+# proxy) pour que request.remote_addr et request.is_secure reflètent le
+# vrai client, et non le proxy interne. Sans ça, le rate limiting devient
+# global (toutes les requêtes semblent venir de la même IP) et le header
+# HSTS n'est jamais envoyé.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 # Configuration de sécurité
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", os.urandom(24))
@@ -207,6 +215,10 @@ class GristAPIClient:
         def escape_sql_string(value):
             # Échappement standard SQL : une apostrophe devient deux apostrophes
             return str(value).replace("'", "''")
+
+        # Validation du nom de table (défense en profondeur : ne pas se fier
+        # au fait que le frontend n'envoie que des valeurs issues du dropdown)
+        table_name = validate_column(table_name)
 
         where_clauses = []
         dynamic_count = 0
