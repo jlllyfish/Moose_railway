@@ -98,7 +98,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const data = await response.json();
 
       if (data.success) {
-        showModal("Test réussi", `✅ ${data.message}`);
+        showModal("Test réussi", `âœ… ${data.message}`);
       } else {
         showModal(
           "Erreur de token API",
@@ -186,9 +186,9 @@ document.addEventListener("DOMContentLoaded", function () {
         });
         elements.tableSelect.disabled = false;
 
-        // Afficher un message de succès temporaire
+        // Afficher un message de succÃ¨s temporaire
         const originalText = this.textContent;
-        this.textContent = `✅ ${tables.length} tables chargées`;
+        this.textContent = `âœ“ ${tables.length} tables chargées`;
         this.classList.add("fr-btn--success");
 
         setTimeout(() => {
@@ -264,7 +264,6 @@ document.addEventListener("DOMContentLoaded", function () {
   // Activation du bouton quand une colonne est sélectionnée
   elements.columnSelect.addEventListener("change", function () {
     elements.generateBtn.disabled = !this.value;
-    advancedCheckbox.disabled = !this.value;
     elements.result.style.display = "none";
     clearTestResults();
     currentUrl = null;
@@ -371,25 +370,40 @@ document.addEventListener("DOMContentLoaded", function () {
   async function testGeneratedUrl(url) {
     console.log("Test de l'URL:", url);
 
-    // Remplacer {id} par une valeur de test
-    const testId = prompt(
-      "Entrez une valeur de test pour remplacer {id} et tester votre filtre principal:",
-      "LPA",
+    // Détecter tous les placeholders présents dans l'URL : {id}, {id2}, {id3}...
+    const placeholders = [...new Set(url.match(/\{id\d*\}/g) || [])].sort(
+      (a, b) => a.length - b.length || a.localeCompare(b),
     );
-    if (!testId) return;
 
-    console.log("Valeur de test:", testId);
+    if (placeholders.length === 0) {
+      showModal("Erreur", "Aucun placeholder {id} trouvé dans cette URL", true);
+      return;
+    }
+
+    // Demander une valeur de test pour chaque placeholder
+    const testValues = {};
+    for (const placeholder of placeholders) {
+      const key = placeholder.slice(1, -1); // enlève les accolades
+      const value = prompt(
+        `Entrez une valeur de test pour remplacer ${placeholder} :`,
+        key === "id" ? "LPA" : "",
+      );
+      if (value === null) return; // annulation
+      testValues[key] = value;
+    }
+
+    console.log("Valeurs de test:", testValues);
 
     // Supprimer les résultats de test précédents
     const existingTestResults = document.querySelectorAll("[data-test-result]");
     existingTestResults.forEach((result) => result.remove());
 
     // Afficher le résultat de test
-    await showTestResult(url, testId);
+    await showTestResult(url, testValues);
   }
 
   // Fonction pour afficher les résultats de test
-  async function showTestResult(url, testId) {
+  async function showTestResult(url, testValues) {
     const template = document.getElementById("test-result-template");
     const clone = template.content.cloneNode(true);
 
@@ -411,7 +425,7 @@ document.addEventListener("DOMContentLoaded", function () {
     accordionTitle.textContent = "Chargement des résultats...";
 
     try {
-      console.log("Appel Ã  /test_url avec:", { url, test_value: testId });
+      console.log("Appel Ã  /test_url avec:", { url, test_values: testValues });
 
       // Appeler la route Flask pour tester l'URL
       const response = await fetch("/test_url", {
@@ -421,7 +435,7 @@ document.addEventListener("DOMContentLoaded", function () {
         },
         body: JSON.stringify({
           url: url,
-          test_value: testId,
+          test_values: testValues,
           api_key: getApiKey(),
         }),
       });
@@ -536,17 +550,18 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // ============================================
-  // MODE AVANCÉ - Toggle simple
+  // MODE AVANCÉ SQL - Toggle simple
   // ============================================
 
   const advancedCheckbox = document.getElementById("advancedMode");
   const simpleMode = document.getElementById("simpleMode");
   const advancedSection = document.getElementById("advancedSection");
-  const addFilterBtn = document.getElementById("addFilterBtn");
-  const generateAdvancedBtn = document.getElementById("generateAdvancedBtn");
-  const filtersContainer = document.getElementById("filters-container");
+  const addConditionBtn = document.getElementById("addConditionBtn");
+  const generateSqlBtn = document.getElementById("generateSqlBtn");
+  const conditionsContainer = document.getElementById("conditions-container");
+  const orderByColumnSelect = document.getElementById("orderByColumn");
 
-  let filterCount = 0;
+  let conditionCount = 0;
   let availableColumns = [];
 
   // Réinitialiser la checkbox au chargement
@@ -559,14 +574,14 @@ document.addEventListener("DOMContentLoaded", function () {
       simpleMode.style.display = "none";
       advancedSection.style.display = "block";
 
-      // Créer automatiquement le 1er filtre avec la colonne sélectionnée
+      // Créer automatiquement la 1ère condition avec la colonne sélectionnée
       const selectedColumn = elements.columnSelect.value;
-      if (selectedColumn && filtersContainer.children.length === 0) {
-        addFirstFilter(selectedColumn);
+      if (selectedColumn && conditionsContainer.children.length === 0) {
+        addCondition(selectedColumn, "dynamic", true);
       }
 
       if (elements.tableSelect.value) {
-        addFilterBtn.disabled = false;
+        addConditionBtn.disabled = false;
       }
     } else {
       simpleMode.style.display = "block";
@@ -574,79 +589,82 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  // Fonction pour ajouter le 1er filtre automatiquement
-  function addFirstFilter(columnName) {
-    filterCount++;
-    const filterId = "filter-" + filterCount;
-
-    const filterHTML = `
-      <h6 class="fr-text--sm fr-mb-1w" style="color: #666; text-transform: uppercase; letter-spacing: 0.05em;">Filtre principal</h6>
-      <div class="fr-card fr-card--sm fr-mb-3w" id="${filterId}" data-filter-id="${filterCount}" style="border-left: 4px solid #000091; background: #f5f5fe;">
-        <div class="fr-card__body">
-          <div class="fr-card__content">
-            <p class="fr-text--sm fr-mb-0">
-              <strong>${columnName}</strong>
-              <span class="fr-badge fr-badge--sm fr-badge--blue-france fr-ml-1w">{id}</span>
-            </p>
-          </div>
-        </div>
-      </div>
-      <h6 class="fr-text--sm fr-mb-1w" style="color: #666; text-transform: uppercase; letter-spacing: 0.05em;">Filtres additionnels</h6>
-    `;
-
-    filtersContainer.insertAdjacentHTML("beforeend", filterHTML);
-    window.mainFilterColumn = columnName;
-    updateGenerateButton();
-  }
-
-  // Activer le bouton "Ajouter un filtre"
+  // Activer le bouton "Ajouter une condition"
   elements.tableSelect.addEventListener("change", function () {
     if (this.value && advancedCheckbox.checked) {
-      addFilterBtn.disabled = false;
+      addConditionBtn.disabled = false;
     }
+    // Remplir aussi le select ORDER BY
+    orderByColumnSelect.innerHTML = '<option value="">-- Aucun tri --</option>';
   });
 
-  // Ajouter un filtre supplémentaire
-  addFilterBtn.addEventListener("click", function () {
-    filterCount++;
-    const filterId = "filter-" + filterCount;
+  // Remplir le select ORDER BY dès que les colonnes sont chargées
+  elements.tableSelect.addEventListener("change", async function () {
+    // On attend un tick pour laisser le temps au listener existant de peupler availableColumns
+    setTimeout(() => {
+      orderByColumnSelect.innerHTML = '<option value="">-- Aucun tri --</option>';
+      availableColumns.forEach((col) => {
+        const option = document.createElement("option");
+        option.value = col;
+        option.textContent = col;
+        orderByColumnSelect.appendChild(option);
+      });
+    }, 300);
+  });
 
-    const filterHTML = `
-      <div class="fr-card fr-card--sm fr-mb-2w" id="${filterId}" data-filter-id="${filterCount}">
+  // Fonction pour créer une ligne de condition
+  function addCondition(presetColumn = null, presetType = "dynamic", isFirst = false) {
+    conditionCount++;
+    const condId = "cond-" + conditionCount;
+
+    const conditionHTML = `
+      <div class="fr-card fr-card--sm fr-mb-2w${isFirst ? " main-filter-highlight" : ""}" id="${condId}" data-condition-id="${conditionCount}">
         <div class="fr-card__body">
           <div class="fr-card__content">
+            ${isFirst ? '<p class="fr-badge fr-badge--blue-france fr-mb-2w">Filtre principal (valeur saisie par l\'usager dans DN)</p>' : ""}
             <div class="fr-grid-row fr-grid-row--gutters">
-              <div class="fr-col-12 fr-col-md-4">
+              <div class="fr-col-12 fr-col-md-3">
                 <div class="fr-select-group">
-                  <label class="fr-label" for="${filterId}-column">Colonne</label>
-                  <select class="fr-select filter-column" id="${filterId}-column" required>
+                  <label class="fr-label" for="${condId}-column">Colonne</label>
+                  <select class="fr-select cond-column" id="${condId}-column" required>
                     <option value="">-- Choisir --</option>
                   </select>
                 </div>
               </div>
               <div class="fr-col-12 fr-col-md-3">
+                <div class="fr-select-group">
+                  <label class="fr-label" for="${condId}-operator">Opérateur</label>
+                  <select class="fr-select cond-operator" id="${condId}-operator">
+                    <option value="exact">Exact (=)</option>
+                    <option value="contains">Contient (insensible casse)</option>
+                    <option value="startswith">Commence par (insensible casse)</option>
+                    <option value="in">Dans une liste</option>
+                  </select>
+                </div>
+              </div>
+              <div class="fr-col-12 fr-col-md-2">
                 <div class="fr-input-group">
                   <label class="fr-label">Type</label>
                   <div class="fr-radio-group">
-                    <input type="radio" id="${filterId}-dynamic" name="${filterId}-type" value="dynamic" checked>
-                    <label class="fr-label" for="${filterId}-dynamic">{id}</label>
+                    <input type="radio" id="${condId}-dynamic" name="${condId}-type" value="dynamic" ${presetType === "dynamic" ? "checked" : ""}>
+                    <label class="fr-label" for="${condId}-dynamic">{id}</label>
                   </div>
                   <div class="fr-radio-group">
-                    <input type="radio" id="${filterId}-fixed" name="${filterId}-type" value="fixed">
-                    <label class="fr-label" for="${filterId}-fixed">Fixes</label>
+                    <input type="radio" id="${condId}-fixed" name="${condId}-type" value="fixed" ${presetType === "fixed" ? "checked" : ""}>
+                    <label class="fr-label" for="${condId}-fixed">Fixe</label>
                   </div>
                 </div>
               </div>
-              <div class="fr-col-12 fr-col-md-4">
-                <div class="fr-input-group" id="${filterId}-values-group" style="display: none;">
-                  <label class="fr-label" for="${filterId}-values">Valeurs (virgules)</label>
-                  <input class="fr-input filter-values" type="text" id="${filterId}-values" placeholder="LPA, LEGTA">
+              <div class="fr-col-12 fr-col-md-3">
+                <div class="fr-input-group" id="${condId}-values-group" style="display: ${presetType === "fixed" ? "block" : "none"};">
+                  <label class="fr-label" for="${condId}-values">
+                    Valeur(s) <span class="fr-hint-text">virgules si liste</span>
+                  </label>
+                  <input class="fr-input cond-values" type="text" id="${condId}-values" placeholder="LPA, LEGTA">
                 </div>
               </div>
               <div class="fr-col-12 fr-col-md-1">
-                <button type="button" class="fr-btn fr-btn--sm fr-btn--tertiary-no-outline fr-icon-delete-bin-line"
-                        onclick="removeFilter('${filterId}')" title="Supprimer">
-                </button>
+                ${isFirst ? "" : `<button type="button" class="fr-btn fr-btn--sm fr-btn--tertiary-no-outline fr-icon-delete-bin-line" onclick="removeCondition('${condId}')" title="Supprimer"></button>`}
               </div>
             </div>
           </div>
@@ -654,19 +672,20 @@ document.addEventListener("DOMContentLoaded", function () {
       </div>
     `;
 
-    filtersContainer.insertAdjacentHTML("beforeend", filterHTML);
+    conditionsContainer.insertAdjacentHTML("beforeend", conditionHTML);
 
-    const columnSelect = document.getElementById(filterId + "-column");
+    const columnSelect = document.getElementById(condId + "-column");
     availableColumns.forEach((col) => {
       const option = document.createElement("option");
       option.value = col;
       option.textContent = col;
+      if (presetColumn && col === presetColumn) option.selected = true;
       columnSelect.appendChild(option);
     });
 
-    const radioFixed = document.getElementById(filterId + "-fixed");
-    const radioDynamic = document.getElementById(filterId + "-dynamic");
-    const valuesGroup = document.getElementById(filterId + "-values-group");
+    const radioFixed = document.getElementById(condId + "-fixed");
+    const radioDynamic = document.getElementById(condId + "-dynamic");
+    const valuesGroup = document.getElementById(condId + "-values-group");
 
     radioFixed.addEventListener("change", function () {
       if (this.checked) valuesGroup.style.display = "block";
@@ -676,69 +695,75 @@ document.addEventListener("DOMContentLoaded", function () {
       if (this.checked) valuesGroup.style.display = "none";
     });
 
-    updateGenerateButton();
+    updateGenerateSqlButton();
+  }
+
+  // Créer la 1ère condition avec la colonne + IN pré-remplis si dispo
+  addConditionBtn.addEventListener("click", function () {
+    addCondition();
   });
 
-  window.removeFilter = function (filterId) {
-    const filterElement = document.getElementById(filterId);
-    if (filterElement) {
-      filterElement.remove();
-      updateGenerateButton();
+  window.removeCondition = function (condId) {
+    const condElement = document.getElementById(condId);
+    if (condElement) {
+      condElement.remove();
+      updateGenerateSqlButton();
     }
   };
 
-  function updateGenerateButton() {
-    const filters = filtersContainer.querySelectorAll("[data-filter-id]");
-    generateAdvancedBtn.disabled = filters.length === 0;
+  function updateGenerateSqlButton() {
+    const conditions = conditionsContainer.querySelectorAll("[data-condition-id]");
+    generateSqlBtn.disabled = conditions.length === 0;
   }
 
-  generateAdvancedBtn.addEventListener("click", async function () {
-    const filters = [];
+  generateSqlBtn.addEventListener("click", async function () {
+    const conditions = [];
+    const conditionElements = conditionsContainer.querySelectorAll("[data-condition-id]");
 
-    // Ajouter la colonne principale en 1er
-    filters.push({
-      column: window.mainFilterColumn || elements.columnSelect.value,
-      type: "dynamic",
-    });
-
-    // Puis ajouter les autres filtres
-    const filterElements =
-      filtersContainer.querySelectorAll("[data-filter-id]");
-
-    filterElements.forEach((filterEl) => {
-      // Skip le 1er filtre (déjà ajouté)
-      if (filterEl.id === "filter-1") return;
-
-      const filterId = filterEl.id;
-      const column = document.getElementById(filterId + "-column").value;
-      const type = document.querySelector(
-        `input[name="${filterId}-type"]:checked`,
-      ).value;
+    conditionElements.forEach((condEl) => {
+      const condId = condEl.id;
+      const column = document.getElementById(condId + "-column").value;
+      const operator = document.getElementById(condId + "-operator").value;
+      const type = document.querySelector(`input[name="${condId}-type"]:checked`).value;
 
       if (!column) return;
 
-      const filter = { column: column, type: type };
+      const condition = { column: column, operator: operator, type: type };
 
       if (type === "fixed") {
-        const valuesInput = document.getElementById(filterId + "-values").value;
-        filter.values = valuesInput
+        const valuesInput = document.getElementById(condId + "-values").value;
+        const values = valuesInput
           .split(",")
           .map((v) => v.trim())
           .filter((v) => v);
+
+        if (operator === "in") {
+          condition.values = values;
+        } else {
+          condition.value = values[0] || "";
+        }
       }
 
-      filters.push(filter);
+      conditions.push(condition);
     });
 
-    if (filters.length === 0) {
-      showModal("Erreur", "Configurez au moins un filtre");
+    if (conditions.length === 0) {
+      showModal("Erreur", "Configurez au moins une condition");
       return;
     }
+
+    const connector = document.querySelector('input[name="connector"]:checked').value;
+    const orderByColumn = orderByColumnSelect.value;
+    const orderByDirection = document.getElementById("orderByDirection").value;
+    const limit = parseInt(document.getElementById("sqlLimit").value, 10) || 20;
 
     const requestData = {
       doc_id: elements.docIdInput.value.trim(),
       table_name: elements.tableSelect.value,
-      filters: filters,
+      conditions: conditions,
+      connector: connector,
+      order_by: orderByColumn ? { column: orderByColumn, direction: orderByDirection } : null,
+      limit: limit,
       api_key: getApiKey(),
     };
 
@@ -748,7 +773,7 @@ document.addEventListener("DOMContentLoaded", function () {
     this.textContent = "Génération...";
 
     try {
-      const response = await fetch("/generate_url_advanced", {
+      const response = await fetch("/generate_url_sql", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestData),
@@ -767,8 +792,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     elements.loading.style.display = "none";
     this.disabled = false;
-    this.textContent = "Générer l'URL avancée";
+    this.textContent = "Générer l'URL SQL";
   });
+
 
   // Bouton Recommencer
   const resetBtn = document.getElementById("resetBtn");
@@ -789,14 +815,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Réinitialiser mode avancé
     advancedCheckbox.checked = false;
-    advancedCheckbox.disabled = true;
     simpleMode.style.display = "block";
     advancedSection.style.display = "none";
-    filtersContainer.innerHTML = "";
-    filterCount = 0;
+    conditionsContainer.innerHTML = "";
+    conditionCount = 0;
     availableColumns = [];
-    addFilterBtn.disabled = true;
-    generateAdvancedBtn.disabled = true;
+    orderByColumnSelect.innerHTML = '<option value="">-- Aucun tri --</option>';
+    document.getElementById("sqlLimit").value = 20;
+    addConditionBtn.disabled = true;
+    generateSqlBtn.disabled = true;
 
     // Cacher résultats et bouton recommencer
     elements.result.style.display = "none";
