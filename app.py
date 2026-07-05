@@ -227,6 +227,7 @@ class GristAPIClient:
             col = validate_column(cond["column"])
             operator = cond["operator"]
             is_dynamic = cond.get("type") == "dynamic"
+            negate = cond.get("negate", False)
 
             if is_dynamic:
                 dynamic_count += 1
@@ -238,24 +239,29 @@ class GristAPIClient:
                     if is_dynamic
                     else f"'{escape_sql_string(cond['value'])}'"
                 )
-                where_clauses.append(f"{col} = {value}")
+                op = "!=" if negate else "="
+                where_clauses.append(f"{col} {op} {value}")
 
             elif operator == "contains":
                 value = placeholder if is_dynamic else escape_sql_string(cond["value"])
-                where_clauses.append(f"lower({col}) LIKE lower('%{value}%')")
+                like = "NOT LIKE" if negate else "LIKE"
+                where_clauses.append(f"lower({col}) {like} lower('%{value}%')")
 
             elif operator == "startswith":
                 value = placeholder if is_dynamic else escape_sql_string(cond["value"])
-                where_clauses.append(f"lower({col}) LIKE lower('{value}%')")
+                like = "NOT LIKE" if negate else "LIKE"
+                where_clauses.append(f"lower({col}) {like} lower('{value}%')")
 
             elif operator == "in":
+                in_kw = "NOT IN" if negate else "IN"
                 if is_dynamic:
                     # IN dynamique peu utile en pratique mais géré pour cohérence
-                    where_clauses.append(f"{col} = '{placeholder}'")
+                    op = "!=" if negate else "="
+                    where_clauses.append(f"{col} {op} '{placeholder}'")
                 else:
                     values = cond.get("values", [])
                     escaped = ", ".join(f"'{escape_sql_string(v)}'" for v in values)
-                    where_clauses.append(f"{col} IN ({escaped})")
+                    where_clauses.append(f"{col} {in_kw} ({escaped})")
             else:
                 raise ValueError(f"Opérateur inconnu : {operator}")
 
