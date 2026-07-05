@@ -623,7 +623,7 @@ document.addEventListener("DOMContentLoaded", function () {
           <div class="fr-card__content">
             ${isFirst ? '<p class="fr-badge fr-badge--blue-france fr-mb-2w">Filtre principal (valeur saisie par l\'usager dans DN)</p>' : ""}
             <div class="fr-grid-row fr-grid-row--gutters">
-              <div class="fr-col-12 fr-col-md-3">
+              <div class="fr-col-12 fr-col-md-4">
                 <div class="fr-select-group">
                   <label class="fr-label" for="${condId}-column">Colonne</label>
                   <select class="fr-select cond-column" id="${condId}-column" required>
@@ -631,7 +631,7 @@ document.addEventListener("DOMContentLoaded", function () {
                   </select>
                 </div>
               </div>
-              <div class="fr-col-12 fr-col-md-3">
+              <div class="fr-col-12 fr-col-md-4">
                 <div class="fr-select-group">
                   <label class="fr-label" for="${condId}-operator">Opérateur</label>
                   <select class="fr-select cond-operator" id="${condId}-operator">
@@ -642,7 +642,7 @@ document.addEventListener("DOMContentLoaded", function () {
                   </select>
                 </div>
               </div>
-              <div class="fr-col-12 fr-col-md-2">
+              <div class="fr-col-12 fr-col-md-3">
                 <div class="fr-input-group">
                   <label class="fr-label">Type</label>
                   <div class="fr-radio-group">
@@ -655,7 +655,10 @@ document.addEventListener("DOMContentLoaded", function () {
                   </div>
                 </div>
               </div>
-              <div class="fr-col-12 fr-col-md-2">
+              <div class="fr-col-12 fr-col-md-1">
+                ${isFirst ? "" : `<button type="button" class="fr-btn fr-btn--sm fr-btn--tertiary-no-outline fr-icon-delete-bin-line" onclick="removeCondition('${condId}')" title="Supprimer"></button>`}
+              </div>
+              <div class="fr-col-12 fr-col-md-8">
                 <div class="fr-input-group" id="${condId}-values-group" style="display: ${presetType === "fixed" ? "block" : "none"};">
                   <label class="fr-label" for="${condId}-values">
                     Valeur(s) <span class="fr-hint-text">virgules si liste</span>
@@ -663,16 +666,13 @@ document.addEventListener("DOMContentLoaded", function () {
                   <input class="fr-input cond-values" type="text" id="${condId}-values" placeholder="LPA, LEGTA">
                 </div>
               </div>
-              <div class="fr-col-12 fr-col-md-1">
+              <div class="fr-col-12 fr-col-md-4">
                 <div class="fr-checkbox-group fr-checkbox-group--sm">
                   <input type="checkbox" id="${condId}-negate" class="cond-negate">
                   <label class="fr-label" for="${condId}-negate">
-                    Négation <span class="fr-hint-text">(différent de / ne contient pas)</span>
+                    Négation <span class="fr-hint-text">(!= / ne contient pas)</span>
                   </label>
                 </div>
-              </div>
-              <div class="fr-col-12 fr-col-md-1">
-                ${isFirst ? "" : `<button type="button" class="fr-btn fr-btn--sm fr-btn--tertiary-no-outline fr-icon-delete-bin-line" onclick="removeCondition('${condId}')" title="Supprimer"></button>`}
               </div>
             </div>
           </div>
