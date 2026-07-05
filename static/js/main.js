@@ -655,12 +655,20 @@ document.addEventListener("DOMContentLoaded", function () {
                   </div>
                 </div>
               </div>
-              <div class="fr-col-12 fr-col-md-3">
+              <div class="fr-col-12 fr-col-md-2">
                 <div class="fr-input-group" id="${condId}-values-group" style="display: ${presetType === "fixed" ? "block" : "none"};">
                   <label class="fr-label" for="${condId}-values">
                     Valeur(s) <span class="fr-hint-text">virgules si liste</span>
                   </label>
                   <input class="fr-input cond-values" type="text" id="${condId}-values" placeholder="LPA, LEGTA">
+                </div>
+              </div>
+              <div class="fr-col-12 fr-col-md-1">
+                <div class="fr-checkbox-group fr-checkbox-group--sm">
+                  <input type="checkbox" id="${condId}-negate" class="cond-negate">
+                  <label class="fr-label" for="${condId}-negate">
+                    Négation <span class="fr-hint-text">(différent de / ne contient pas)</span>
+                  </label>
                 </div>
               </div>
               <div class="fr-col-12 fr-col-md-1">
@@ -728,7 +736,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (!column) return;
 
-      const condition = { column: column, operator: operator, type: type };
+      const negate = document.getElementById(condId + "-negate").checked;
+      const condition = { column: column, operator: operator, type: type, negate: negate };
 
       if (type === "fixed") {
         const valuesInput = document.getElementById(condId + "-values").value;
