@@ -262,6 +262,20 @@ class GristAPIClient:
                     values = cond.get("values", [])
                     escaped = ", ".join(f"'{escape_sql_string(v)}'" for v in values)
                     where_clauses.append(f"{col} {in_kw} ({escaped})")
+
+            elif operator == "boolean":
+                # Grist stocke les booléens en 0/1 dans SQLite
+                if is_dynamic:
+                    op = "!=" if negate else "="
+                    where_clauses.append(f"{col} {op} {placeholder}")
+                else:
+                    bool_value = (
+                        1 if str(cond.get("value")).lower() in ("true", "1") else 0
+                    )
+                    if negate:
+                        bool_value = 1 - bool_value
+                    where_clauses.append(f"{col} = {bool_value}")
+
             else:
                 raise ValueError(f"Opérateur inconnu : {operator}")
 
