@@ -639,6 +639,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     <option value="contains">Contient (insensible casse)</option>
                     <option value="startswith">Commence par (insensible casse)</option>
                     <option value="in">Dans une liste</option>
+                    <option value="boolean">Booléen (vrai/faux)</option>
                   </select>
                 </div>
               </div>
@@ -664,6 +665,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     Valeur(s) <span class="fr-hint-text">virgules si liste</span>
                   </label>
                   <input class="fr-input cond-values" type="text" id="${condId}-values" placeholder="LPA, LEGTA">
+                  <select class="fr-select cond-bool-value" id="${condId}-bool-value" style="display: none;">
+                    <option value="true">Vrai</option>
+                    <option value="false">Faux</option>
+                  </select>
                 </div>
               </div>
               <div class="fr-col-12 fr-col-md-4">
@@ -694,6 +699,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const radioFixed = document.getElementById(condId + "-fixed");
     const radioDynamic = document.getElementById(condId + "-dynamic");
     const valuesGroup = document.getElementById(condId + "-values-group");
+    const operatorSelect = document.getElementById(condId + "-operator");
+    const valuesTextInput = document.getElementById(condId + "-values");
+    const boolValueSelect = document.getElementById(condId + "-bool-value");
 
     radioFixed.addEventListener("change", function () {
       if (this.checked) valuesGroup.style.display = "block";
@@ -701,6 +709,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
     radioDynamic.addEventListener("change", function () {
       if (this.checked) valuesGroup.style.display = "none";
+    });
+
+    // Basculer entre champ texte et select Vrai/Faux selon l'opérateur
+    operatorSelect.addEventListener("change", function () {
+      if (this.value === "boolean") {
+        valuesTextInput.style.display = "none";
+        boolValueSelect.style.display = "block";
+      } else {
+        valuesTextInput.style.display = "block";
+        boolValueSelect.style.display = "none";
+      }
     });
 
     updateGenerateSqlButton();
@@ -740,16 +759,20 @@ document.addEventListener("DOMContentLoaded", function () {
       const condition = { column: column, operator: operator, type: type, negate: negate };
 
       if (type === "fixed") {
-        const valuesInput = document.getElementById(condId + "-values").value;
-        const values = valuesInput
-          .split(",")
-          .map((v) => v.trim())
-          .filter((v) => v);
-
-        if (operator === "in") {
-          condition.values = values;
+        if (operator === "boolean") {
+          condition.value = document.getElementById(condId + "-bool-value").value;
         } else {
-          condition.value = values[0] || "";
+          const valuesInput = document.getElementById(condId + "-values").value;
+          const values = valuesInput
+            .split(",")
+            .map((v) => v.trim())
+            .filter((v) => v);
+
+          if (operator === "in") {
+            condition.values = values;
+          } else {
+            condition.value = values[0] || "";
+          }
         }
       }
 
